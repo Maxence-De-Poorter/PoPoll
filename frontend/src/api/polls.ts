@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:7071/api";
+const API_URL = (import.meta.env.VITE_API_URL ?? "") + "/api";
 
 import type { Poll } from "../types/poll";
 
