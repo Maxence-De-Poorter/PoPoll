@@ -1,3 +1,5 @@
+/** Déploiement IaC */
+
 resource "random_string" "suffix" {
   length  = 6
   special = false
@@ -5,14 +7,16 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  name = "${var.project}-${var.environment}-${random_string.suffix.result}"
+  name = "${var.project}-${random_string.suffix.result}"
 }
 
+/** On provisione un ressource groupe */
 resource "azurerm_resource_group" "rg" {
   name     = "rg-${local.name}"
   location = var.location_swa
 }
 
+/** On provisione un compte Cosmos DB */
 resource "azurerm_cosmosdb_account" "cosmos" {
   name                = "cosmos-${local.name}"
   location            = var.location_data
@@ -32,12 +36,14 @@ resource "azurerm_cosmosdb_account" "cosmos" {
   }
 }
 
+/** BDD */
 resource "azurerm_cosmosdb_sql_database" "db" {
   name                = "strawpoll"
   resource_group_name = azurerm_resource_group.rg.name
   account_name        = azurerm_cosmosdb_account.cosmos.name
 }
 
+/** Table polls */
 resource "azurerm_cosmosdb_sql_container" "polls" {
   name                = "polls"
   resource_group_name = azurerm_resource_group.rg.name
@@ -46,14 +52,16 @@ resource "azurerm_cosmosdb_sql_container" "polls" {
   partition_key_paths = ["/id"]
 }
 
+/** On provisione un service plan - backend */
 resource "azurerm_service_plan" "api_plan" {
   name                = "plan-api-${local.name}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = var.location_data
   os_type             = "Linux"
-  sku_name            = "B1" # simple et stable (tu peux passer en F1 si dispo, sinon B1)
+  sku_name            = "B1"
 }
 
+/** On provisione une App Service - API Node */
 resource "azurerm_linux_web_app" "api" {
   name                = "api-${local.name}"
   resource_group_name = azurerm_resource_group.rg.name
@@ -78,6 +86,7 @@ resource "azurerm_linux_web_app" "api" {
   depends_on = [azurerm_static_web_app.swa]
 }
 
+/** On provisione une Static Web App */
 resource "azurerm_static_web_app" "swa" {
   name                = "swa-${local.name}"
   resource_group_name = azurerm_resource_group.rg.name
