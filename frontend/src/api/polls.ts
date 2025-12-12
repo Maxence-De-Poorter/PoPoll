@@ -1,4 +1,4 @@
-const API_URL = "api-popoll-dev-vqg41f.azurewebsites.net";
+const API_URL = "https://api-popoll-dev-vqg41f.azurewebsites.net";
 
 import type { Poll } from "../types/poll";
 
