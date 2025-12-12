@@ -1,68 +1,125 @@
-# 🔁 Redéploiement du projet (enseignant)
+# Installation du projet PoPoll
 
-Ce document décrit **la procédure minimale** permettant à l’enseignant de redéployer le projet de manière autonome.
-
-Le pipeline CI/CD **n’a pas vocation à être testé ou modifié**.  
-Il sert uniquement de mécanisme de déploiement automatique après la création de l’infrastructure.
+Ce document décrit **pas à pas** la procédure permettant à l’enseignant de déployer le projet de manière autonome à l’aide de **Terraform**, **Azure CLI** et du **pipeline CI/CD fourni**.
 
 ---
 
-## ✅ Principe général
+## Prérequis
 
-L’enseignant doit simplement :
-
-1. **Forker le dépôt**
-2. **Déployer l’infrastructure avec Terraform**
-3. **Récupérer la clé de déploiement**
-4. **Ajouter la clé comme secret GitHub**
-5. **Effectuer un push pour déclencher le déploiement**
-
-Aucune configuration manuelle dans Azure n’est nécessaire.
+- Un compte **GitHub**
+- Un compte **Azure**
+- **Azure CLI** installé
+- **Terraform** installé
+- **Git** installé
 
 ---
 
-## 1️⃣ Fork du dépôt GitHub
+## 1️⃣ Création du dépôt (Fork)
 
-Depuis GitHub :
+1. Se rendre sur le dépôt GitHub du projet
+2. Cliquer sur **Fork**
+3. Créer le fork sur son propre compte GitHub
 
+Le fork est nécessaire pour :
+- disposer de son propre pipeline CI/CD
+- configurer ses propres secrets GitHub
+- déployer le projet indépendamment
+
+---
+
+## 2️⃣ Récupération complète du projet
+
+Cloner le dépôt forké :
+
+```bash
+git clone <url-du-depot-forke>
+cd <nom-du-depot>
 ```
-Fork → Create fork
-```
 
-Le fork permet :
-- d’avoir son propre pipeline CI/CD
-- de gérer ses propres secrets GitHub
-- de redéployer le projet sans dépendre du dépôt original
+⚠️ Le projet doit être récupéré **dans son intégralité**, y compris les dossiers :
+- `frontend`
+- `api`
+- `infra`
+- `.github`
 
 ---
 
-## 2️⃣ Déploiement de l’infrastructure (Terraform)
+## 3️⃣ Accès au dossier d’infrastructure
+
+Depuis la racine du projet :
 
 ```bash
 cd infra
+```
+
+---
+
+## 4️⃣ Connexion à Azure
+
+```bash
+az login
+```
+
+Une fenêtre de connexion s’ouvre dans le navigateur.  
+Une fois la connexion terminée, revenir au terminal.
+
+---
+
+## 5️⃣ Initialisation de Terraform
+
+```bash
 terraform init
+```
+
+---
+
+## 6️⃣ Déploiement de l’infrastructure Azure
+
+```bash
 terraform apply
 ```
 
+Confirmer le déploiement avec :
+
+```text
+yes
+```
+
 Terraform crée automatiquement :
-- Resource Group
-- Azure Cosmos DB
-- Azure App Service (Backend Express)
-- Azure Static Web App (Frontend)
+- le Resource Group
+- l’Azure App Service (backend)
+- l’Azure Static Web App (frontend)
+- les ressources associées
 
 ---
 
-## 3️⃣ Récupération de la clé de déploiement
+## 7️⃣ Récupération des clés secrètes (commandes)
 
-À la fin du `terraform apply`, récupérer l’output suivant :
+### 🔐 Clé Static Web App (frontend)
 
-- `static_web_app_api_key`
-
-Cette clé permet au pipeline GitHub Actions de déployer l’application frontend.
+```bash
+az staticwebapp secrets list --name <static_web_app_name> --resource-group <resource_group_name> --query "properties.apiKey" -o tsv
+```
 
 ---
 
-## 4️⃣ Ajout du secret GitHub
+### 🔐 Nom de la Web App backend
+
+```bash
+az webapp list --resource-group <resource_group_name> --query "[].name" -o table
+```
+
+---
+
+### 🔐 Publish Profile du backend
+
+```bash
+az webapp deployment list-publishing-profiles --name <webapp_name> --resource-group <resource_group_name> --xml
+```
+
+---
+
+## 8️⃣ Configuration des secrets GitHub
 
 Dans le dépôt forké :
 
@@ -70,41 +127,43 @@ Dans le dépôt forké :
 Settings → Secrets and variables → Actions → New repository secret
 ```
 
-Ajouter :
+Ajouter les **3 secrets suivants** :
 
-| Nom | Valeur |
-|---|---|
-| AZURE_STATIC_WEB_APPS_API_TOKEN | valeur de `static_web_app_api_key` |
+| Nom du secret | Valeur |
+|--------------|--------|
+| `AZURE_STATIC_WEB_APPS_API_TOKEN` | clé Static Web App |
+| `AZURE_WEBAPP_NAME` | nom de la Web App backend |
+| `AZURE_WEBAPP_PUBLISH_PROFILE` | XML du publish profile |
 
 ---
 
-## 5️⃣ Déploiement applicatif
+## 9️⃣ Configuration de l’URL de l’API (frontend)
 
-Effectuer un push sur la branche `main` :
+Modifier le fichier suivant :
+
+```text
+/frontend/.env.production
+```
+
+Remplacer la valeur par l’URL du backend déployé :
+
+```env
+VITE_API_URL=https://api-popoll-dev-vqg41f.azurewebsites.net
+```
+
+---
+
+## 🔟 Déclenchement du déploiement applicatif
 
 ```bash
 git commit -m "Initial deployment"
 git push origin main
 ```
 
-Le pipeline GitHub Actions :
-- build le frontend
-- build le backend
-- déploie automatiquement les deux sur Azure
-
 ---
 
 ## ✅ Résultat attendu
 
-- L’infrastructure est créée via Terraform
-- Le déploiement est déclenché automatiquement via GitHub Actions
-- L’application est accessible sans configuration manuelle supplémentaire
-
----
-
-## ℹ️ Remarque pédagogique
-
-Conformément aux consignes, le CI/CD :
-- **n’a pas besoin d’être testé**
-- est fourni à titre démonstratif
-- permet simplement d’illustrer un déploiement automatisé et reproductible
+- infrastructure Azure créée
+- secrets GitHub configurés
+- frontend et backend déployés automatiquement
