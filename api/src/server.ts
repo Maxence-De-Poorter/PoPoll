@@ -89,9 +89,13 @@ app.post("/polls/:id/vote", async (req, res) => {
   if (!resource) return res.status(404).json({ error: "Poll not found" });
 
   const poll = resource;
-  poll.options.forEach((opt, i) => {
-    if (body.selections.includes(opt)) poll.results[i] = (poll.results[i] ?? 0) + 1;
-  });
+poll.options.forEach((opt: string, i: number) => {
+  if (body.selections.includes(opt)) {
+    poll.results[i] = (poll.results[i] ?? 0) + 1;
+  }
+});
+
+
 
   await container.items.upsert(poll);
   return res.status(200).json({ ok: true });
