@@ -170,6 +170,8 @@ terraform output -raw api_app_name
 az webapp deployment list-publishing-profiles --name "$(terraform output -raw api_app_name)" --resource-group "$(terraform output -raw resource_group_name)" --xml
 ```
 
+Résultat : <publishData>...</publishData>
+
 ---
 
 ## 8️⃣ Configuration des secrets GitHub
@@ -210,7 +212,7 @@ Modifier le fichier suivant :
 Remplacer la valeur par l’URL du backend récupérée précédemment :
 
 ```env
-VITE_API_URL=https://api-popoll-dev-xxxx.azurewebsites.net
+VITE_API_URL=https://api-popoll-xxxx.azurewebsites.net
 ```
 
 ---
