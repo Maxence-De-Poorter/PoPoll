@@ -141,26 +141,8 @@ Ajouter les **3 secrets suivants** :
 
 Avant de configurer le frontend, il est nécessaire de **récupérer l’URL publique du backend**.
 
-### 🔍 Récupération de l’URL du backend (recommandé)
-
-Depuis le dossier `/infra` :
-
-```bash
-terraform output -raw api_base_url
-```
-
-Cette commande retourne une URL de la forme :
-
-```text
-https://api-popoll-dev-xxxx.azurewebsites.net
-```
-
-### 🔎 Méthode alternative (Portail Azure)
-
-1. Se rendre sur le **Portail Azure**
-2. Aller dans **App Services**
-3. Sélectionner la Web App backend
-4. Copier la valeur **Default domain**
+- Via Terraform (recommandé) : `terraform output -raw api_base_url`
+- Ou via le **Portail Azure** → App Services → Web App backend → *Default domain*
 
 ---
 
@@ -189,9 +171,22 @@ git push origin main
 
 ---
 
+## 🏁 Accès à l’application déployée
+
+Une fois le **pipeline GitHub Actions terminé avec succès** :
+
+1. Se rendre sur le **Portail Azure**
+2. Aller dans **Static Web Apps**
+3. Sélectionner la Static Web App créée
+4. Cliquer sur le **lien affiché dans “Overview”**
+
+L’application s’ouvre alors directement dans le navigateur.
+
+---
+
 ## ✅ Résultat attendu
 
 - infrastructure Azure créée
 - secrets GitHub configurés
-- URL de l’API frontend correctement définie
 - frontend et backend déployés automatiquement
+- application accessible publiquement
