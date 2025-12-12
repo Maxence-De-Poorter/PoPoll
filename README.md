@@ -1,6 +1,6 @@
 # Installation du projet PoPoll
 
-Ce document décrit **pas à pas** la procédure permettant à l’enseignant de déployer le projet de manière autonome à l’aide de **Terraform**, **Azure CLI** et du **pipeline CI/CD fourni**.
+Ce document décrit **pas à pas** la procédure permettant de déployer le projet de manière autonome à l’aide de **Terraform**, **Azure CLI** et du **pipeline CI/CD fourni**.
 
 ---
 
@@ -98,7 +98,7 @@ Terraform crée automatiquement :
 ### 🔐 Clé Static Web App (frontend)
 
 ```bash
-az staticwebapp secrets list --name <static_web_app_name> --resource-group <resource_group_name> --query "properties.apiKey" -o tsv
+terraform output -raw static_web_app_api_key
 ```
 
 ---
@@ -106,7 +106,7 @@ az staticwebapp secrets list --name <static_web_app_name> --resource-group <reso
 ### 🔐 Nom de la Web App backend
 
 ```bash
-az webapp list --resource-group <resource_group_name> --query "[].name" -o table
+terraform output -raw api_app_name
 ```
 
 ---
@@ -114,7 +114,7 @@ az webapp list --resource-group <resource_group_name> --query "[].name" -o table
 ### 🔐 Publish Profile du backend
 
 ```bash
-az webapp deployment list-publishing-profiles --name <webapp_name> --resource-group <resource_group_name> --xml
+az webapp deployment list-publishing-profiles --name "$(terraform output -raw api_app_name)" --resource-group "$(terraform output -raw resource_group_name)" --xml
 ```
 
 ---
@@ -139,16 +139,43 @@ Ajouter les **3 secrets suivants** :
 
 ## 9️⃣ Configuration de l’URL de l’API (frontend)
 
+Avant de configurer le frontend, il est nécessaire de **récupérer l’URL publique du backend**.
+
+### 🔍 Récupération de l’URL du backend (recommandé)
+
+Depuis le dossier `/infra` :
+
+```bash
+terraform output -raw api_base_url
+```
+
+Cette commande retourne une URL de la forme :
+
+```text
+https://api-popoll-dev-xxxx.azurewebsites.net
+```
+
+### 🔎 Méthode alternative (Portail Azure)
+
+1. Se rendre sur le **Portail Azure**
+2. Aller dans **App Services**
+3. Sélectionner la Web App backend
+4. Copier la valeur **Default domain**
+
+---
+
+### ✏️ Modification du fichier frontend
+
 Modifier le fichier suivant :
 
 ```text
 /frontend/.env.production
 ```
 
-Remplacer la valeur par l’URL du backend déployé :
+Remplacer la valeur par l’URL du backend récupérée précédemment :
 
 ```env
-VITE_API_URL=https://api-popoll-dev-vqg41f.azurewebsites.net
+VITE_API_URL=https://api-popoll-dev-xxxx.azurewebsites.net
 ```
 
 ---
@@ -166,4 +193,5 @@ git push origin main
 
 - infrastructure Azure créée
 - secrets GitHub configurés
+- URL de l’API frontend correctement définie
 - frontend et backend déployés automatiquement
