@@ -32,45 +32,47 @@ resource "azurerm_cosmosdb_account" "cosmos" {
   }
 }
 
-resource "azurerm_storage_account" "funcsa" {
-  name                     = "funcsa${random_string.suffix.result}"
-  resource_group_name      = azurerm_resource_group.rg.name
-  location                 = var.location_data
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
+resource "azurerm_cosmosdb_sql_database" "db" {
+  name                = "strawpoll"
+  resource_group_name = azurerm_resource_group.rg.name
+  account_name        = azurerm_cosmosdb_account.cosmos.name
 }
 
-resource "azurerm_service_plan" "funcplan" {
-  name                = "plan-func-${local.name}"
+resource "azurerm_cosmosdb_sql_container" "polls" {
+  name                = "polls"
+  resource_group_name = azurerm_resource_group.rg.name
+  account_name        = azurerm_cosmosdb_account.cosmos.name
+  database_name       = azurerm_cosmosdb_sql_database.db.name
+  partition_key_paths = ["/id"]
+}
+
+resource "azurerm_service_plan" "api_plan" {
+  name                = "plan-api-${local.name}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = var.location_data
   os_type             = "Linux"
-  sku_name            = "Y1"
+  sku_name            = "B1" # simple et stable (tu peux passer en F1 si dispo, sinon B1)
 }
 
-resource "azurerm_linux_function_app" "api" {
-  name                       = "func-${local.name}"
-  resource_group_name        = azurerm_resource_group.rg.name
-  location                   = var.location_data
-  service_plan_id            = azurerm_service_plan.funcplan.id
-  storage_account_name       = azurerm_storage_account.funcsa.name
-  storage_account_access_key = azurerm_storage_account.funcsa.primary_access_key
+resource "azurerm_linux_web_app" "api" {
+  name                = "api-${local.name}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = var.location_data
+  service_plan_id     = azurerm_service_plan.api_plan.id
 
   site_config {
     application_stack {
-      node_version = "20"
+      node_version = "20-lts"
     }
   }
 
   app_settings = {
-    FUNCTIONS_WORKER_RUNTIME = "node"
-    WEBSITE_RUN_FROM_PACKAGE = "1"
-
     COSMOS_CONNECTION_STRING = azurerm_cosmosdb_account.cosmos.primary_sql_connection_string
-    COSMOS_DB_NAME           = "strawpoll"
-    COSMOS_CONTAINER_NAME    = "polls"
+    COSMOS_DB_NAME           = azurerm_cosmosdb_sql_database.db.name
+    COSMOS_CONTAINER_NAME    = azurerm_cosmosdb_sql_container.polls.name
 
     ALLOWED_ORIGIN = "http://localhost:5173,https://${azurerm_static_web_app.swa.default_host_name}"
+    PORT           = "8080"
   }
 
   depends_on = [azurerm_static_web_app.swa]

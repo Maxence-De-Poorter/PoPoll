@@ -1,26 +1,16 @@
-import { CosmosClient, type Container } from "@azure/cosmos";
+import { CosmosClient, Container } from "@azure/cosmos";
 
-let _container: Container | null = null;
+function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing env var: ${name}`);
+  return v;
+}
 
-export async function getPollsContainer(): Promise<Container> {
-  if (_container) return _container;
-
-  const connectionString = process.env.COSMOS_CONNECTION_STRING ?? "";
-  const databaseName = process.env.COSMOS_DB_NAME ?? "strawpoll";
+export function getContainer(): Container {
+  const connectionString = requireEnv("COSMOS_CONNECTION_STRING");
+  const dbName = process.env.COSMOS_DB_NAME ?? "strawpoll";
   const containerName = process.env.COSMOS_CONTAINER_NAME ?? "polls";
-  const partitionKeyPath = process.env.COSMOS_PARTITION_KEY_PATH ?? "/id";
-
-  if (!connectionString) throw new Error("Missing COSMOS_CONNECTION_STRING");
 
   const client = new CosmosClient(connectionString);
-
-  const { database } = await client.databases.createIfNotExists({ id: databaseName });
-
-  const { container } = await database.containers.createIfNotExists({
-    id: containerName,
-    partitionKey: { paths: [partitionKeyPath] }
-  });
-
-  _container = container;
-  return _container;
+  return client.database(dbName).container(containerName);
 }
