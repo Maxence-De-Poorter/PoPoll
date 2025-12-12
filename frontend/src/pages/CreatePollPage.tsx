@@ -17,18 +17,15 @@ export default function CreatePollPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔹 Options nettoyées
   const cleanOptions = useMemo(
     () => options.map((o) => o.trim()).filter((o) => o !== ""),
     [options]
   );
 
-  // 🔹 Détection des doublons (insensible à la casse)
   const normalizedOptions = cleanOptions.map((o) => o.toLowerCase());
   const hasDuplicates =
     new Set(normalizedOptions).size !== normalizedOptions.length;
 
-  // 🔹 Conditions de création
   const canCreate =
     title.trim().length > 0 &&
     cleanOptions.length >= 2 &&

@@ -20,7 +20,6 @@ export default function PollPage() {
 
   const voted = localStorage.getItem(`poll_${pollId}_voted`) === "true";
 
-  // 1) Chargement initial du poll
   useEffect(() => {
     if (!pollId) return;
 
@@ -35,16 +34,14 @@ export default function PollPage() {
       .finally(() => setLoading(false));
   }, [pollId]);
 
-  // 2) LIVE RESULTS : rafraîchit toutes les 3s quand l'utilisateur a voté
   useEffect(() => {
     if (!pollId) return;
-    if (!voted) return; // live uniquement sur la page "résultats"
+    if (!voted) return;
 
     const interval = setInterval(() => {
       getPoll(pollId)
         .then(setPoll)
         .catch(() => {
-          // on évite de spam l'UI si une requête échoue temporairement
         });
     }, 3000);
 
@@ -63,7 +60,6 @@ export default function PollPage() {
       await votePoll(pollId, selected);
       localStorage.setItem(`poll_${pollId}_voted`, "true");
 
-      // on récupère les résultats tout de suite
       const updated = await getPoll(pollId);
       setPoll(updated);
     } catch (e: unknown) {
