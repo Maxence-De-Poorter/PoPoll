@@ -27,7 +27,7 @@ export async function CreatePoll(req: HttpRequest): Promise<HttpResponseInit> {
     createdAt: new Date().toISOString()
   };
 
-  const container = getPollsContainer();
+  const container = await getPollsContainer();
   await container.items.create(poll);
 
   return { status: 200, jsonBody: { id }, headers: corsHeaders(req) };

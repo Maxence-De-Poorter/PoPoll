@@ -16,7 +16,7 @@ export async function VotePoll(req: HttpRequest): Promise<HttpResponseInit> {
     return { status: 400, jsonBody: { error: "Invalid body" }, headers: corsHeaders(req) };
   }
 
-  const container = getPollsContainer();
+  const container = await getPollsContainer();
 
   // Lire
   const { resource: poll } = await container.item(id, id).read<any>();
