@@ -2,9 +2,10 @@
   "name": "strawpoll-api",
   "private": true,
   "type": "module",
+  "main": "dist/index.js",
   "engines": {
-  "node": ">=20.0.0"
-},
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "start": "func start",
