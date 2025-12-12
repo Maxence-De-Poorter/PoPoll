@@ -13,7 +13,6 @@ local.settings.json
 
 .env
 .env.*
-!.env.example
 !frontend/.env
 !frontend/.env.production
 !api/.env
