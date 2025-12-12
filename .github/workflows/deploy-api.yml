@@ -10,7 +10,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -25,9 +24,31 @@ jobs:
           npm ci
           npm run build
 
-      - name: Deploy to Azure Functions
+      # Prépare un dossier "publish" qui ressemble à wwwroot
+      - name: Prepare publish folder
+        run: |
+          rm -rf publish
+          mkdir -p publish
+          cp api/host.json publish/
+          cp api/package.json publish/
+          cp api/package-lock.json publish/
+          cp -R api/dist publish/dist
+
+      # Installe les deps de prod dans publish (ce sera exactement ce qui tourne)
+      - name: Install production dependencies
+        working-directory: publish
+        run: |
+          npm ci --omit=dev
+
+      # Zip le contenu publish
+      - name: Create deployment package
+        run: |
+          cd publish
+          zip -r ../api.zip .
+
+      - name: Deploy to Azure Functions (zip)
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-          package: api
+          package: api.zip
