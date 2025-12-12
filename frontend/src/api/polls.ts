@@ -1,15 +1,14 @@
-const API_URL = "https://api-popoll-dev-vqg41f.azurewebsites.net";
+const API_URL = import.meta.env.VITE_API_URL ?? "https://api-popoll-dev-vqg41f.azurewebsites.net";
 
 import type { Poll } from "../types/poll";
+import { getJson } from "./http";
 
-export async function getPolls(): Promise<Poll[]> {
-  const res = await fetch(`${API_URL}/polls`);
-  return res.json();
+export function getPolls(): Promise<Poll[]> {
+  return getJson(`${API_URL}/polls`);
 }
 
-export async function getPoll(id: string): Promise<Poll> {
-  const res = await fetch(`${API_URL}/polls/${id}`);
-  return res.json();
+export function getPoll(id: string): Promise<Poll> {
+  return getJson(`${API_URL}/polls/${id}`);
 }
 
 interface CreatePollData {
@@ -19,17 +18,16 @@ interface CreatePollData {
 }
 
 export async function createPoll(data: CreatePollData): Promise<string> {
-  const res = await fetch(`${API_URL}/polls`, {
+  const json = await getJson<{ id: string }>(`${API_URL}/polls`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const json = await res.json();
-  return json.id; // UUID string
+  return json.id;
 }
 
-export async function votePoll(id: string, selections: string[]): Promise<void> {
-  await fetch(`${API_URL}/polls/${id}/vote`, {
+export function votePoll(id: string, selections: string[]): Promise<void> {
+  return getJson(`${API_URL}/polls/${id}/vote`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ selections }),

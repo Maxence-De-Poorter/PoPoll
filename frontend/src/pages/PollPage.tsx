@@ -4,6 +4,8 @@ import { getPoll, votePoll } from "../api/polls";
 import type { Poll } from "../types/poll";
 import VoteResults from "../components/VoteResults";
 import Header from "../components/Header";
+import Spinner from "../components/Spinner";
+import Alert from "../components/Alert";
 
 export default function PollPage() {
   const { id } = useParams();
@@ -12,74 +14,117 @@ export default function PollPage() {
   const [poll, setPoll] = useState<Poll | undefined>();
   const [selected, setSelected] = useState<string[]>([]);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
   const voted = localStorage.getItem(`poll_${pollId}_voted`) === "true";
 
   useEffect(() => {
-    if (pollId) {
-      getPoll(pollId).then(setPoll);
-    }
+    if (!pollId) return;
+
+    setLoading(true);
+    setError(null);
+
+    getPoll(pollId)
+      .then(setPoll)
+      .catch((e: unknown) =>
+        setError(e instanceof Error ? e.message : "Erreur inconnue")
+      )
+      .finally(() => setLoading(false));
   }, [pollId]);
 
-  const submitVote = async () => {
-    if (!poll) return;
-    await votePoll(pollId, selected);
-    localStorage.setItem(`poll_${pollId}_voted`, "true");
-    window.location.reload();
-  };
+  const canVote = selected.length > 0 && !submitting;
 
-  if (!poll) return <div className="p-6">Chargement...</div>;
+  const submitVote = async () => {
+    if (!poll || !canVote) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await votePoll(pollId, selected);
+      localStorage.setItem(`poll_${pollId}_voted`, "true");
+
+      const updated = await getPoll(pollId);
+      setPoll(updated);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erreur inconnue");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
-      
       <Header />
 
       <main className="max-w-xl mx-auto mt-8 bg-white p-6 rounded-lg shadow">
+        {loading && <Spinner />}
 
-        {/* 🔥 Le titre est maintenant visible dans la page */}
-        <h2 className="text-xl font-bold mb-6 text-center">{poll.title}</h2>
+        {error && <Alert variant="error">{error}</Alert>}
 
-        {!voted ? (
+        {!loading && poll && (
           <>
-            <h3 className="text-lg font-semibold mb-4">Vote</h3>
+            <h2 className="text-xl font-bold mb-6 text-center">{poll.title}</h2>
 
-            {poll.options.map((opt, i) => (
-              <label key={i} className="flex items-center gap-3 mb-2">
-                <input
-                  type={poll.mode === "single" ? "radio" : "checkbox"}
-                  name="vote"
-                  checked={selected.includes(opt)}
-                  value={opt}
-                  onChange={() => {
-                    if (poll.mode === "single") {
-                      setSelected([opt]);
-                    } else {
-                      setSelected((prev) =>
-                        prev.includes(opt)
-                          ? prev.filter((x) => x !== opt)
-                          : [...prev, opt]
-                      );
-                    }
-                  }}
-                />
-                <span>{opt}</span>
-              </label>
-            ))}
+            {submitting && <Spinner label="Envoi du vote…" />}
 
-            <button
-              onClick={submitVote}
-              className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition mt-4"
-            >
-              Voter
-            </button>
-          </>
-        ) : (
-          <>
-            <h3 className="text-lg font-semibold mb-4">Résultats</h3>
-            <VoteResults options={poll.options} results={poll.results} />
+            {!voted ? (
+              <>
+                <h3 className="text-lg font-semibold mb-4">Vote</h3>
+
+                {poll.options.map((opt, i) => (
+                  <label key={i} className="flex items-center gap-3 mb-2">
+                    <input
+                      type={poll.mode === "single" ? "radio" : "checkbox"}
+                      name="vote"
+                      checked={selected.includes(opt)}
+                      value={opt}
+                      onChange={() => {
+                        if (poll.mode === "single") {
+                          setSelected([opt]);
+                        } else {
+                          setSelected((prev) =>
+                            prev.includes(opt)
+                              ? prev.filter((x) => x !== opt)
+                              : [...prev, opt]
+                          );
+                        }
+                      }}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+
+                {selected.length === 0 && (
+                  <Alert variant="info">Sélectionne au moins une option.</Alert>
+                )}
+
+                <button
+                  onClick={submitVote}
+                  disabled={!canVote}
+                  className={`w-full p-3 rounded-lg transition mt-4 ${
+                    canVote
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  {submitting ? "Envoi…" : "Voter"}
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-semibold mb-4">Résultats</h3>
+                <VoteResults options={poll.options} results={poll.results} />
+              </>
+            )}
           </>
         )}
 
+        {!loading && !poll && !error && (
+          <Alert variant="info">Sondage introuvable.</Alert>
+        )}
       </main>
     </div>
   );

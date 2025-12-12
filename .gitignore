@@ -13,9 +13,7 @@ local.settings.json
 
 .env
 .env.*
-!frontend/.env
 !frontend/.env.production
-!api/.env
 
 .terraform/
 .terraform.lock.hcl
