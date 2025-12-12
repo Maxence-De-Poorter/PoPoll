@@ -154,12 +154,22 @@ Terraform crée automatiquement :
 terraform output -raw static_web_app_api_key
 ```
 
+Résultat pour la clé secrète:
+```xml
+6b...cf03
+```
+
 ---
 
 ### 🔐 Nom de la Web App backend
 
 ```bash
 terraform output -raw api_app_name
+```
+
+Résultat pour la clé secrète:
+```xml
+api-popoll-xxxxxx
 ```
 
 ---
@@ -170,7 +180,13 @@ terraform output -raw api_app_name
 az webapp deployment list-publishing-profiles --name "$(terraform output -raw api_app_name)" --resource-group "$(terraform output -raw resource_group_name)" --xml
 ```
 
-Résultat : <publishData>...</publishData>
+Résultat pour la clé secrète:
+```xml
+<publishData>
+  ...
+</publishData>
+```
+
 
 ---
 
