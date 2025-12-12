@@ -15,6 +15,7 @@ local.settings.json
 .env.*
 !.env.example
 !frontend/.env
+!frontend/.env.production
 !api/.env
 
 .terraform/
