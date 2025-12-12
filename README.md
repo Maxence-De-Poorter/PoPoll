@@ -4,6 +4,59 @@ Ce document décrit **pas à pas** la procédure permettant de déployer le proj
 
 ---
 
+## 🏗️ Architecture de l’application
+
+L’application **PoPoll** repose sur une architecture **cloud simple et modulaire**, entièrement déployée sur **Microsoft Azure**.
+
+### Vue d’ensemble
+
+- **Frontend**  
+  Application web développée en **React** et déployée sur **Azure Static Web Apps**.  
+  Elle gère l’interface utilisateur (création de sondages, vote, affichage des résultats).
+
+- **Backend**  
+  API REST déployée sur **Azure App Service (Linux)**.  
+  Elle expose les endpoints nécessaires à la gestion des sondages et des votes.
+
+- **Base de données**  
+  Base de données **NoSQL** (Azure Cosmos DB) utilisée pour stocker :
+  - les sondages
+  - les options
+  - les résultats de vote
+
+- **Infrastructure as Code**  
+  L’ensemble de l’infrastructure est décrit via **Terraform**, garantissant un déploiement reproductible et automatisé.
+
+- **CI/CD**  
+  Le déploiement applicatif est automatisé via **GitHub Actions**.
+
+### Schéma logique (simplifié)
+
+```
+[ Navigateur ]
+      |
+      v
+[ Azure Static Web App ]
+      |
+      v
+[ Azure App Service (API) ]
+      |
+      v
+[ Azure Cosmos DB ]
+```
+
+---
+
+## 🔗 Accès à une instance déjà déployée (démonstration)
+
+Une instance de démonstration est disponible à l’adresse suivante :
+
+```
+https://victorious-flower-03f193303.3.azurestaticapps.net
+```
+
+---
+
 ## Prérequis
 
 - Un compte **GitHub**
