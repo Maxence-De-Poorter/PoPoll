@@ -17,14 +17,22 @@ export default function CreatePollPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔹 Options nettoyées
   const cleanOptions = useMemo(
     () => options.map((o) => o.trim()).filter((o) => o !== ""),
     [options]
   );
 
+  // 🔹 Détection des doublons (insensible à la casse)
+  const normalizedOptions = cleanOptions.map((o) => o.toLowerCase());
+  const hasDuplicates =
+    new Set(normalizedOptions).size !== normalizedOptions.length;
+
+  // 🔹 Conditions de création
   const canCreate =
     title.trim().length > 0 &&
     cleanOptions.length >= 2 &&
+    !hasDuplicates &&
     !submitting;
 
   const updateOption = (index: number, value: string) => {
@@ -93,6 +101,12 @@ export default function CreatePollPage() {
 
         {cleanOptions.length < 2 && (
           <Alert variant="info">Ajoute au moins 2 options.</Alert>
+        )}
+
+        {hasDuplicates && (
+          <Alert variant="error">
+            Les options doivent être uniques (pas de doublons).
+          </Alert>
         )}
 
         <h3 className="text-lg font-semibold mt-6 mb-2">Mode de vote</h3>
