@@ -20,6 +20,7 @@ export default function PollPage() {
 
   const voted = localStorage.getItem(`poll_${pollId}_voted`) === "true";
 
+  // 1) Chargement initial du poll
   useEffect(() => {
     if (!pollId) return;
 
@@ -34,6 +35,22 @@ export default function PollPage() {
       .finally(() => setLoading(false));
   }, [pollId]);
 
+  // 2) LIVE RESULTS : rafraîchit toutes les 3s quand l'utilisateur a voté
+  useEffect(() => {
+    if (!pollId) return;
+    if (!voted) return; // live uniquement sur la page "résultats"
+
+    const interval = setInterval(() => {
+      getPoll(pollId)
+        .then(setPoll)
+        .catch(() => {
+          // on évite de spam l'UI si une requête échoue temporairement
+        });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [pollId, voted]);
+
   const canVote = selected.length > 0 && !submitting;
 
   const submitVote = async () => {
@@ -46,6 +63,7 @@ export default function PollPage() {
       await votePoll(pollId, selected);
       localStorage.setItem(`poll_${pollId}_voted`, "true");
 
+      // on récupère les résultats tout de suite
       const updated = await getPoll(pollId);
       setPoll(updated);
     } catch (e: unknown) {
@@ -115,8 +133,16 @@ export default function PollPage() {
               </>
             ) : (
               <>
-                <h3 className="text-lg font-semibold mb-4">Résultats</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Résultats</h3>
+                  <div className="text-xs text-gray-500">Live</div>
+                </div>
+
                 <VoteResults options={poll.options} results={poll.results} />
+
+                <div className="mt-4 text-xs text-gray-500">
+                  Actualisation automatique toutes les 3 secondes.
+                </div>
               </>
             )}
           </>
