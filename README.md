@@ -1,80 +1,43 @@
-# 📊 PoPoll – Strawpoll Cloud App
+# 🔁 Redéploiement du projet (enseignant)
 
-PoPoll est une application de type **Strawpoll** permettant de créer des sondages et de voter en ligne.  
-Le projet est déployé **entièrement sur Microsoft Azure**, avec une infrastructure définie en **Infrastructure as Code (Terraform)**.
+Ce document décrit **la procédure minimale** permettant à l’enseignant de redéployer le projet de manière autonome.
 
-**Note à nous-mêmes :** ne plus jamais utiliser Azure Functions pour ce type de projet.
-Après une bonne vingtaine de correctifs pour tenter de faire fonctionner quelque chose de simple, le constat est clair : un App Service avec un backend Express est bien plus fiable, plus lisible et surtout beaucoup plus simple à déployer.
-
----
-
-## 🏗️ Architecture
-
-```
-Frontend (React / Vite)
-        |
-        | HTTPS (REST)
-        v
-Backend API (Node.js / Express)
-        |
-        v
-Azure Cosmos DB (NoSQL)
-```
-
-### Technologies utilisées
-- **Frontend** : React, TypeScript, Vite
-- **Backend** : Node.js, Express, TypeScript
-- **Base de données** : Azure Cosmos DB (SQL API, serverless)
-- **Cloud** : Microsoft Azure
-- **Infrastructure as Code** : Terraform
-- **CI/CD** : GitHub Actions
-- **Hébergement Frontend** : Azure Static Web Apps
-- **Hébergement Backend** : Azure App Service (Linux)
+Le pipeline CI/CD **n’a pas vocation à être testé ou modifié**.  
+Il sert uniquement de mécanisme de déploiement automatique après la création de l’infrastructure.
 
 ---
 
-## 📁 Structure du projet
+## ✅ Principe général
 
-```
-PoPoll/
-├── frontend/          # Application React
-├── api/               # Backend Node.js / Express
-│   └── src/
-│       └── server.ts
-├── infra/             # Infrastructure Terraform
-├── .github/workflows/ # CI/CD GitHub Actions
-└── README.md
-```
+L’enseignant doit simplement :
 
----
+1. **Forker le dépôt**
+2. **Déployer l’infrastructure avec Terraform**
+3. **Récupérer la clé de déploiement**
+4. **Ajouter la clé comme secret GitHub**
+5. **Effectuer un push pour déclencher le déploiement**
 
-## ⚙️ Fonctionnalités
-
-### Sondages
-- Création de sondages (choix simple ou multiple)
-- Liste des sondages
-- Consultation d’un sondage
-- Vote sur un sondage
-
-### API REST
-| Méthode | Route | Description |
-|------|------|------------|
-| GET | `/polls` | Liste des sondages |
-| GET | `/polls/:id` | Détails d’un sondage |
-| POST | `/polls` | Créer un sondage |
-| POST | `/polls/:id/vote` | Voter |
+Aucune configuration manuelle dans Azure n’est nécessaire.
 
 ---
 
-## 🚀 Déploiement
+## 1️⃣ Fork du dépôt GitHub
 
-### Prérequis
-- Node.js **>= 20**
-- Terraform **>= 1.5**
-- Azure CLI (`az login`)
-- Compte GitHub
+Depuis GitHub :
 
-### Déploiement de l’infrastructure
+```
+Fork → Create fork
+```
+
+Le fork permet :
+- d’avoir son propre pipeline CI/CD
+- de gérer ses propres secrets GitHub
+- de redéployer le projet sans dépendre du dépôt original
+
+---
+
+## 2️⃣ Déploiement de l’infrastructure (Terraform)
+
 ```bash
 cd infra
 terraform init
@@ -83,63 +46,65 @@ terraform apply
 
 Terraform crée automatiquement :
 - Resource Group
-- Cosmos DB
-- App Service (API)
-- Static Web App (Frontend)
+- Azure Cosmos DB
+- Azure App Service (Backend Express)
+- Azure Static Web App (Frontend)
 
 ---
 
-## 🔄 CI/CD
+## 3️⃣ Récupération de la clé de déploiement
 
-Un pipeline GitHub Actions est configuré :
-- Build du frontend
-- Build du backend
-- Déploiement automatique sur Azure à chaque `push` sur `main`
+À la fin du `terraform apply`, récupérer l’output suivant :
 
-Secret GitHub requis :
-- `AZURE_STATIC_WEB_APPS_API_TOKEN`
+- `static_web_app_api_key`
+
+Cette clé permet au pipeline GitHub Actions de déployer l’application frontend.
 
 ---
 
-## 🔐 Variables d’environnement (Backend)
+## 4️⃣ Ajout du secret GitHub
 
-Configurées automatiquement via Terraform :
-- `COSMOS_CONNECTION_STRING`
-- `COSMOS_DB_NAME`
-- `COSMOS_CONTAINER_NAME`
-- `ALLOWED_ORIGIN`
+Dans le dépôt forké :
 
----
-
-## 🧪 Lancer en local (optionnel)
-
-### Backend
-```bash
-cd api
-npm install
-npm run build
-npm start
+```
+Settings → Secrets and variables → Actions → New repository secret
 ```
 
-### Frontend
+Ajouter :
+
+| Nom | Valeur |
+|---|---|
+| AZURE_STATIC_WEB_APPS_API_TOKEN | valeur de `static_web_app_api_key` |
+
+---
+
+## 5️⃣ Déploiement applicatif
+
+Effectuer un push sur la branche `main` :
+
 ```bash
-cd frontend
-npm install
-npm run dev
+git commit -m "Initial deployment"
+git push origin main
 ```
 
----
-
-## 🎯 Objectifs pédagogiques
-
-- Architecture cloud complète
-- Séparation frontend / backend
-- Infrastructure as Code
-- Déploiement automatisé
-- Utilisation d’une base NoSQL distribuée
+Le pipeline GitHub Actions :
+- build le frontend
+- build le backend
+- déploie automatiquement les deux sur Azure
 
 ---
 
-## 👨‍💻 Auteur
+## ✅ Résultat attendu
 
-Projet réalisé dans un cadre académique, démontrant la mise en place d’une application cloud moderne et déployable de manière reproductible.
+- L’infrastructure est créée via Terraform
+- Le déploiement est déclenché automatiquement via GitHub Actions
+- L’application est accessible sans configuration manuelle supplémentaire
+
+---
+
+## ℹ️ Remarque pédagogique
+
+Conformément aux consignes, le CI/CD :
+- **n’a pas besoin d’être testé**
+- est fourni à titre démonstratif
+- permet simplement d’illustrer un déploiement automatisé et reproductible
