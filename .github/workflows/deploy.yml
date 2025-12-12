@@ -1,19 +1,28 @@
+# Nom du workflow
 name: Déploiement PoPoll
 
+# Lance de worklow des qu'un push arrive sur la main
 on:
   push:
     branches: ["main"]
 
+# Description du workflow
 jobs:
   deploy:
+    # Execute le workflow sur une VM ayant pour OS ubuntu-latest
     runs-on: ubuntu-latest
+
+
     steps:
+      # On récupère le code
       - uses: actions/checkout@v4
 
+      # On installe Node.js en version 20.19.0
       - uses: actions/setup-node@v4
         with:
           node-version: "20.19.0"
 
+      # On installe les dépendances puis on build le backend
       - name: Installation et construction du backend
         working-directory: api
         run: |
@@ -21,11 +30,13 @@ jobs:
           npm run build
           npm ci --omit=dev
 
+      # On créer une archive du build backend pour le déployer 
       - name: Zip backend
         run: |
           cd api
           zip -r ../api.zip .
 
+      # On déploie notre archive sur l'App Service, l'App service s'occupe de dézipper et le mettre en place
       - name: Déploiement du backend vers Azure App Service
         uses: azure/webapps-deploy@v3
         with:
@@ -33,12 +44,14 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: api.zip
 
+      # On installe les dépendances puis on build le frontend
       - name: Installation et construction du frontend
         working-directory: frontend
         run: |
           npm ci
           npm run build
 
+      # On déploie le front sur le SWA
       - name: Déploiement du frontend vers Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -47,3 +60,5 @@ jobs:
           action: "upload"
           app_location: "frontend"
           output_location: "dist"
+
+# Fin du workflow, l'entiereté du projet est déployé sur Azure via CI/CD.
